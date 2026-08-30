@@ -15,8 +15,15 @@
 # abstract-method - with intro of async there are always methods missing
 
 disable=
+  consider-using-enumerate,
+  consider-using-f-string,
+  missing-timeout,
+  raise-missing-from,
+  super-with-arguments,
   too-many-arguments,
   too-many-instance-attributes,
+  too-many-positional-arguments,
+  unspecified-encoding,
 
 
 [REPORTS]
