@@ -1,11 +1,7 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
     branches:
       - main
 
@@ -13,29 +9,54 @@ concurrency:
   group: release
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  id-token: write
+permissions: {}
 
 jobs:
+  verify:
+    name: Verify release
+    if: github.repository == 'lowlydba/python-carson-living'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install package and test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[test]"
+
+      - name: Run tests
+        run: python -m pytest --cov=carson_living --cov-report=term-missing
+
+      - name: Run flake8
+        run: flake8 carson_living tests scripts
+
+      - name: Run pylint
+        run: pylint carson_living tests scripts
+
   release:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.repository == 'lowlydba/python-carson-living'
+    name: Release
+    needs: verify
     runs-on: ubuntu-latest
     environment:
       name: pypi
+    permissions:
+      contents: write # Create the release commit, tag, and GitHub Release.
+      id-token: write # Authenticate to PyPI through Trusted Publishing.
 
     steps:
-      - name: Check out tested commit
+      - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Check out release branch
-        run: git checkout -B main
+          persist-credentials: false
 
       - name: Create GitHub release
         id: release
@@ -49,7 +70,6 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
-          cache: pip
 
       - name: Build distribution
         if: steps.release.outputs.released == 'true'

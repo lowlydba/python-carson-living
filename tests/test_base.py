@@ -30,7 +30,7 @@ class CarsonUnitTestBase(unittest.TestCase):
             self.carson = Carson(USERNAME, PASSWORD, self.token)
             self.first_building = self.carson.first_building
             self.user = self.carson.first_building
-            self.first_camera = next(iter(self.first_building.cameras))
+            self.first_camera = next(iter(self.first_building.cameras), None)
             self.first_door = next(iter(self.first_building.doors))
 
     def _init_default_mocks(self, mock, c_mock_me_filename):

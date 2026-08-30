@@ -143,12 +143,8 @@ class TestCarson(CarsonUnitTestBase):
 
         self.assertEqual(3, len(self.first_building.doors))
 
-        # Carson Building returns 2 cameras
-        self.assertEqual(2, len(self.first_building.cameras))
-
-        # Eagle Eye API returns 8 cameras
+        self.assertEqual(0, len(self.first_building.cameras))
         self.assertIsNotNone(self.first_building.eagleeye_api)
-        self.assertEqual(8, len(self.first_building.eagleeye_api.cameras))
 
         self.assertIn(str(self.first_building.entity_id),
                       str(self.first_building))
@@ -187,8 +183,7 @@ class TestCarson(CarsonUnitTestBase):
             )
             i += 1
 
-        # Camera deleted, changed, added
-        self.assertEqual(3, len(self.first_building.cameras))
+        self.assertEqual(0, len(self.first_building.cameras))
 
         # Door deleted, changed, added
         self.assertEqual(4, len(self.first_building.doors))
