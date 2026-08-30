@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Carson API Module for Carson Living tests."""
 import io
+import unittest
 from datetime import datetime
 from datetime import timedelta
 
@@ -22,6 +23,7 @@ except ImportError:
     from mock import Mock
 
 
+@unittest.skip('Eagle Eye camera support is disabled')
 class TestCamera(CarsonUnitTestBase):
     """Carson Living camera entity test class."""
 

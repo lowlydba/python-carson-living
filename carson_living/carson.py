@@ -50,7 +50,7 @@ class Carson(CarsonAuth):
         return self._user
 
     def update(self):
-        """Update entity list and individual entity parameters associated with the API
+        """Update API entity list and individual entity parameters.
 
         """
         _LOGGER.debug('Updating Carson Living API and associated entities')

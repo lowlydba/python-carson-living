@@ -2,20 +2,17 @@
 Carson Living Python API
 ========================
 
-.. image:: https://badge.fury.io/py/carson-living.svg
-    :target: https://badge.fury.io/py/carson-living
+.. image:: https://badge.fury.io/py/carson-living-electric-boogaloo.svg
+    :target: https://badge.fury.io/py/carson-living-electric-boogaloo
 
-.. image:: https://travis-ci.org/rado0x54/python-carson-living.svg?branch=master
-    :target: https://travis-ci.org/rado0x54/python-carson-living
-
-.. image:: https://coveralls.io/repos/github/rado0x54/python-carson-living/badge.svg?branch=master
-    :target: https://coveralls.io/github/rado0x54/python-carson-living?branch=master
+.. image:: https://github.com/lowlydba/python-carson-living/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/lowlydba/python-carson-living/actions/workflows/ci.yml
 
 .. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
     :target: https://opensource.org/licenses/Apache-2.0
 
-.. image:: https://img.shields.io/pypi/pyversions/carson-living.svg
-    :target: https://pypi.python.org/pypi/carson-living
+.. image:: https://img.shields.io/pypi/pyversions/carson-living-electric-boogaloo.svg
+    :target: https://pypi.org/project/carson-living-electric-boogaloo/
 
 Python Carson Living is a library written in Python that exposes the carson.live devices as Python objects.
 
@@ -29,16 +26,16 @@ Getting started
 Installation
 ~~~~~~~~~~~~~
 
-Carson Living Python should work against **Python 2.x >= 2.7** and **Python 3.x >= 3.5**.
+Carson Living Python requires **Python 3.11 or newer**.
 
 .. code-block::
 
     # Installing from PyPi
-    $ pip install carson_living
+    $ pip install carson-living-electric-boogaloo
 
     # Installing latest development
     $ pip install \
-        git+https://github.com/rado0x54/python-carson-living@master
+        git+https://github.com/lowlydba/python-carson-living@main
 
 Initialize a Carson API object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
