@@ -19,7 +19,7 @@
 
 project = 'Python Carson Living API'
 copyright = '2020, Martin Riedel'
-author = 'Martin Riedel'
+author = 'John McCall'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'

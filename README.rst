@@ -182,6 +182,9 @@ This project uses `gitflow <https://nvie.com/posts/a-successful-git-branching-mo
 
 Credits
 ~~~~~~~
+This project is a fork of `pbrink231/python-carson-living <https://github.com/pbrink231/python-carson-living>`_,
+itself forked from Martin Riedel's original `rado0x54/python-carson-living <https://github.com/rado0x54/python-carson-living>`_.
+
 Project setup and the API object design were inspired by, and partly launched off,
 `python-ring-doorbell <https://github.com/tchellomello/python-ring-doorbell>`_, which saved
 a lot of headaches with tox, setuptools, and Travis.
