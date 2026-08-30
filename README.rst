@@ -16,169 +16,175 @@ Carson Living Python API
 
 Python Carson Living is a library written in Python that exposes the carson.live devices as Python objects.
 
-Disclaimer
-----------
-Please use this library at your own risk and make sure that you do not violate the
-`Terms of Service of Carson <https://www.carson.live/terms>`_.
+.. warning::
 
-Getting started
----------------
-Installation
-~~~~~~~~~~~~~
+    Use this library at your own risk. It may violate the `Terms of Service of Carson <https://www.carson.live/terms>`_.
 
+Tutorial
+--------
+This walks through installing the library, logging in, and opening a unit door end to end.
+
+Install the package
+~~~~~~~~~~~~~~~~~~~~
 Carson Living Python requires **Python 3.11 or newer**.
 
 .. code-block::
 
-    # Installing from PyPi
-    $ pip install carson-living-electric-boogaloo
+    pip install carson-living-electric-boogaloo
 
-    # Installing latest development
-    $ pip install \
-        git+https://github.com/lowlydba/python-carson-living@main
-
-Initialize a Carson API object
+Log in and inspect the account
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 .. code-block:: python
 
-    # Initializing an API object
-    carson = Carson("account@email.com", 'your password')
+    from carson_living import Carson
+
+    carson = Carson("account@email.com", "your password")
     print(carson.user)
     # >> Martin
     print(carson.token)
     # >> ey...
 
-You are also able to pass a valid JWT token during initialization which would prevent a login action as long as the token is valid:
+Carson Living issues long-lived JWT tokens. Copy the printed ``carson.token`` value now;
+`Reuse a saved token`_ below covers skipping the login request on future runs.
+
+Open a unit door
+~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+    for door in carson.first_building.doors:
+        if door.is_unit_door:
+            print("Opening Unit Door {}".format(door.name))
+            door.open()
+
+How-to guides
+-------------
+
+Reuse a saved token
+~~~~~~~~~~~~~~~~~~~
+Pass a saved JWT token during initialization to skip the login request:
 
 .. code-block:: python
 
-    # Initializing an API object with a valid token
-    carson = Carson("account@email.com", 'your password', 'ey....')
+    carson = Carson("account@email.com", "your password", "ey....")
     print(carson.token)
-    # >> Martin
+    # >> ey...
 
-Since Carson Living uses JWT token with very long validity, it is recommended to save the active token via
-``carson.token``, whenever one needs to reinitialize the API later on. The API library is robust to handle expired
-JWT tokens (and 401 handling), so no need to check before.
+Save a live camera image
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
 
-Carson entities
-~~~~~~~~~~~~~~~
-The library currently supports the following entities and actions.
+    for camera in building.cameras:
+        with open("image_{}.jpeg".format(camera.entity_id), "wb") as file:
+            camera.get_image(file)
 
+Save a live camera video
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+    for camera in building.cameras:
+        with open("video_{}.flv".format(camera.entity_id), "wb") as file:
+            camera.get_video(file, timedelta(seconds=10))
+
+Download a recorded image from a timestamp
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+    three_hours_ago = datetime.utcnow() - timedelta(hours=3)
+    for camera in building.cameras:
+        with open("image_{}.jpeg".format(camera.entity_id), "wb") as file:
+            camera.get_image(file, three_hours_ago)
+
+Download a recorded video from a timestamp
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+    three_days_ago = datetime.utcnow() - timedelta(days=3)
+    for cam in building.cameras:
+        with open("video_{}.flv".format(cam.entity_id), "wb") as file:
+            cam.get_video(file, timedelta(seconds=5), three_days_ago)
+
+Generate an authenticated camera URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``camera.get_image_url()`` and ``camera.get_video_url()`` build a URL with an embedded
+``auth_key`` (``A=c000....``) that something outside this library can fetch directly.
+Call ``building.eagleeye_api.update_session_auth_key()`` first if the building's key may
+be stale; ``get_image()`` and ``get_video()`` don't need this since they refresh internally.
+
+.. code-block:: python
+
+    building.eagleeye_api.update_session_auth_key()
+    for cam in building.cameras:
+        img_url = cam.get_image_url(three_days_ago)
+        print(img_url)
+        # >> https://cXXX.eagleeyenetworks.com/asset/prev/image.jpeg?id=c0&timestamp=20200122211442.575&asset_class=pre&A=c000~...
+        response = requests.get(img_url)
+        with open("image_{}_with_url.jpeg".format(cam.entity_id), "wb") as file:
+            file.write(response.content)
+        break  # only fetch one camera in this example
+
+Use ``cam.get_video_url()`` the same way.
+
+Use the CLI tool
+~~~~~~~~~~~~~~~~~
+``./scripts/carsoncli.py`` has further API usage examples.
+
+Reference
+---------
+
+Supported entities
+~~~~~~~~~~~~~~~~~~~
 - User (``carson.user``): read
 - Building (``carson.buildings``): read
 - Doors (``building.doors``): read, open
 - Cameras (``building.cameras``): read, images, video
 
-Door entities
-~~~~~~~~~~~~~
-Doors can be "buzzed" open via ``door.open()``
-
-.. code-block:: python
-
-    # Open all Unit Doors of Main Building
-    for door in carson.first_building.doors:
-        if door.is_unit_door:
-            print('Opening Unit Door {}'.format(door.name))
-            door.open()
-
-Camera entities
-~~~~~~~~~~~~~~~
-Eagle Eye cameras can produce live images and videos but also allow access to passed recordings (see API). The API can download the image and video directly into a provided file object
-or just pass a generated url with an eagle_eye auth key ``A=c000....``. Please note, that the url can only be accessed as long as the ``auth_key`` is valid. Therefore it may make sense to
-force the eagle eye api to refresh the auth key before generating a image or video url.
-
-- Directly save a live image:
-
-.. code-block:: python
-
-        for camera in building.cameras:
-            with open('image_{}.jpeg'.format(camera.entity_id), 'wb') as file:
-                camera.get_image(file)
-
-- Directly save a live video of 10s:
-
-.. code-block:: python
-
-        for camera in building.cameras:
-            with open('video_{}.flv'.format(camera.entity_id), 'wb') as file:
-                camera.get_video(file, timedelta(seconds=10))
-
-- Directly download a image from a timestamp:
-
-.. code-block:: python
-
-    three_hours_ago = datetime.utcnow() - timedelta(hours=3)
-    # download all images from 3 hours ago
-    for camera in building.cameras:
-        with open('image_{}.jpeg'.format(camera.entity_id), 'wb') as file:
-            camera.get_image(file, three_hours_ago)
-
-- Directly download a recorded video from a timestamp:
-
-.. code-block:: python
-
-        three_days_ago = datetime.utcnow() - timedelta(days=3)
-        # download all videos from 3 days ago
-        for cam in building.cameras:
-            with open('video_{}.flv'.format(cam.entity_id), 'wb') as file:
-                cam.get_video(file, timedelta(seconds=5), three_days_ago)
-
-- The Carson API is also able to produce authenticated URLs that can be handled externally.
-  Please not, that the ``auth_key`` has a limited lifetime. Therefore it makes sense to update
-  the ``auth_key`` manually before retrieving predefined URLs. Note, the Eagle Eye API in Carson
-  is associated with a building, so it is sufficient to update it once for all cameras in the same
-  building. The function signature of the the ``_url`` function is identical to the previous ones
-  (minus the file object).
-
-.. code-block:: python
-
-        # Update Session Auth Key of Eagle Eye once in a while if using
-        # generated authenticated URLs.
-        # Note, this is not needed for get_image() or get_video()
-        building.eagleeye_api.update_session_auth_key()
-        for cam in building.cameras:
-            img_url = cam.get_image_url(three_days_ago)
-            print(img_url)
-            # >> https://cXXX.eagleeyenetworks.com/asset/prev/image.jpeg?id=c0&timestamp=20200122211442.575&asset_class=pre&A=c000~...
-            response = requests.get(img_url)
-            with open('image_{}_with_url.jpeg'.format(cam.entity_id), 'wb') as file:
-                file.write(response.content)
-            # do only 1 cam.
-            break
-
-Use ``cam.get_video_url()`` the same way.
-
-CLI Tool
-~~~~~~~~
-Checkout ``./scripts/carsoncli.py`` for further API implementation examples.
-
-Development Notes
------------------
-
-Code Documentation
+Not yet supported
 ~~~~~~~~~~~~~~~~~~
-The code follow the `Google Python Styleguide <https://google.github.io/styleguide/pyguide.html>`_ for docstring.
+- Visitor functionality (``/visitors``)
+- Thread / messaging functionality (``/threads``)
+- Delivery functionality (``/deliveries``)
+- Dashboard functionality (``/dashboard``)
+- Service functionality (``/service``)
+- Twilio integration (``twilio/access-token/``)
+- A separate EagleEye API package
 
-Git Branching Strategy
+Install the development version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block::
+
+    pip install git+https://github.com/lowlydba/python-carson-living@main
+
+Explanation
+-----------
+
+Why tokens are long-lived
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Carson Living issues JWT tokens with a long validity window, so this library treats
+``carson.token`` as reusable across process restarts rather than something to re-fetch on
+every run. It also handles expired tokens and the resulting 401 responses internally, so a
+caller doesn't need to check token validity before making a request.
+
+Why Eagle Eye auth keys need refreshing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``get_image()`` and ``get_video()`` refresh the Eagle Eye ``auth_key`` on demand, but a
+pre-generated URL from ``get_image_url()``/``get_video_url()`` embeds whatever key was
+current at call time and stops working once that key expires. The key is scoped to a
+building rather than a single camera, so one ``update_session_auth_key()`` call covers
+every camera in that building.
+
+Code documentation style
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Docstrings follow the `Google Python Style Guide <https://google.github.io/styleguide/pyguide.html>`_.
+
+Git branching strategy
 ~~~~~~~~~~~~~~~~~~~~~~
-This project uses `gitflow <https://nvie.com/posts/a-successful-git-branching-model/>`_ as a git branching model.
+This project uses `gitflow <https://nvie.com/posts/a-successful-git-branching-model/>`_ as its branching model.
 
-Open Items
-~~~~~~~~~~
-The following is not supported by the API yet and remains TODO.
+Credits
+~~~~~~~
+This project is a fork of `pbrink231/python-carson-living <https://github.com/pbrink231/python-carson-living>`_,
+itself forked from Martin Riedel's original `rado0x54/python-carson-living <https://github.com/rado0x54/python-carson-living>`_.
 
-- Expose visitor functionality (``/visitors``)
-- Expose thread / messaging functionality (``/threads``)
-- Expose delivery functionality (``/deliveries``)
-- Expose dashboard functionality (``/dashboard``)
-- Expose service functionality (``/service``)
-- Integrate Twilio (``twilio/access-token/``)
-- Expand and extract EagleEye API (into separate project?).
-
-
-Credits && Thanks
------------------
-
-* A lot of the project setup and the API object design was inspired / launched off  https://github.com/tchellomello/python-ring-doorbell. Saved me a lot of headaches with tox, setuptools and Travis!.
+Project setup and the API object design were inspired by, and partly launched off,
+`python-ring-doorbell <https://github.com/tchellomello/python-ring-doorbell>`_, which saved
+a lot of headaches with tox, setuptools, and Travis.

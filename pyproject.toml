@@ -10,7 +10,7 @@ readme = "README.rst"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [
-  { name = "Martin Riedel", email = "web@riedel-it.de" },
+  { name = "John McCall", email = "john@lowlydba.com" },
 ]
 keywords = [
   "carson living",
