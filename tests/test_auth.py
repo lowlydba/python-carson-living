@@ -177,10 +177,32 @@ class TestCarsonAuth(unittest.TestCase):
 
         auth = CarsonAuth(USERNAME, PASSWORD, token)
 
-        with self.assertRaises(CarsonCommunicationError):
+        with self.assertRaises(CarsonCommunicationError) as ctx:
             auth.authenticated_query(query_url)
 
         self.assertTrue(mock.called)
+        self.assertIn('Status: 500', str(ctx.exception))
+        self.assertIn('Body: <empty>', str(ctx.exception))
+
+    @requests_mock.Mocker()
+    def test_raise_communication_error_on_html_body(self, mock):
+        """Test failure on a non-JSON (e.g. HTML error page) response"""
+        query_url = 'https://api.carson.live/api/v1.4.4/me/'
+        mock.get(query_url,
+                 text='<html><body>502 Bad Gateway</body></html>',
+                 status_code=502)
+
+        token, _ = get_encoded_token()
+
+        auth = CarsonAuth(USERNAME, PASSWORD, token)
+
+        with self.assertRaises(CarsonCommunicationError) as ctx:
+            auth.authenticated_query(query_url)
+
+        self.assertTrue(mock.called)
+        self.assertIn('Status: 502', str(ctx.exception))
+        self.assertIn('<html><body>502 Bad Gateway</body></html>',
+                      str(ctx.exception))
 
     @requests_mock.Mocker()
     def test_raise_communication_error_wrong_json(self, mock):
@@ -193,7 +215,9 @@ class TestCarsonAuth(unittest.TestCase):
 
         auth = CarsonAuth(USERNAME, PASSWORD, token)
 
-        with self.assertRaises(CarsonCommunicationError):
+        with self.assertRaises(CarsonCommunicationError) as ctx:
             auth.authenticated_query(query_url)
 
         self.assertTrue(mock.called)
+        self.assertIn('Status: 200', str(ctx.exception))
+        self.assertIn('"status_MISSING"', str(ctx.exception))
