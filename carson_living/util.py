@@ -7,6 +7,11 @@ from carson_living.error import (CarsonAPIError,
                                  CarsonCommunicationError)
 from carson_living.const import CARSON_RESPONSE
 
+# Maximum number of characters of a response body to include in error
+# messages. Bodies can be large (e.g. an HTML error page), so they are
+# truncated rather than included in full.
+_BODY_SNIPPET_LIMIT = 200
+
 
 def default_carson_response_handler(response):
     """Safely handle Carson API responses
@@ -18,8 +23,10 @@ def default_carson_response_handler(response):
         The unwrapped data dict of the Carson Living response.
 
     Raises:
-        CarsonCommunicationError: Response was not received or
-            not in the expected format.
+        CarsonCommunicationError: Response was not received, was not
+            valid JSON, or did not contain the expected keys. The
+            error message includes the HTTP status code and a
+            truncated snippet of the response body.
         CarsonAPIError: Response indicated an client-side API
             error.
     """
@@ -27,7 +34,10 @@ def default_carson_response_handler(response):
         r_json = response.json()
         if not all(k in r_json for k in CARSON_RESPONSE.values()):
             raise CarsonCommunicationError(
-                'Carson API response does not contain all expected keys')
+                'Carson API response for {} to {} does not contain all '
+                'expected keys. Status: {}, Body: {}'.format(
+                    response.request.method, response.url,
+                    response.status_code, _response_body_snippet(response)))
 
         if r_json.get(CARSON_RESPONSE['CODE']) != 0:
             raise CarsonAPIError(
@@ -39,10 +49,33 @@ def default_carson_response_handler(response):
                 )
     except ValueError:
         raise CarsonCommunicationError(
-            'Unable to handle response payload for {} to {}'.format(
-                response.request.method, response.url))
+            'Unable to handle response payload for {} to {}. '
+            'Status: {}, Body: {}'.format(
+                response.request.method, response.url,
+                response.status_code, _response_body_snippet(response)))
 
     return r_json.get(CARSON_RESPONSE['DATA'])
+
+
+def _response_body_snippet(response, limit=_BODY_SNIPPET_LIMIT):
+    """Return a short, single-line snippet of a response body.
+
+    Args:
+        response: A Python Requests response object.
+        limit: Maximum length of the returned snippet.
+
+    Returns:
+        A whitespace-collapsed, truncated snippet of the response body,
+        or a placeholder if the body is empty.
+    """
+    text = (response.text or '').strip()
+    if not text:
+        return '<empty>'
+
+    snippet = ' '.join(text.split())
+    if len(snippet) > limit:
+        snippet = snippet[:limit] + '...'
+    return snippet
 
 
 def update_dictionary(current_dict, update_dict, constructor):
